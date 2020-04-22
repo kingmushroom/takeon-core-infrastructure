@@ -1,0 +1,36 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: business-layer
+  namespace: ${namespace}
+  labels:
+    app: business-layer
+spec:
+  ports:
+  - port: 8088
+    nodePort: 32000
+    targetPort: 8088
+    protocol: TCP
+  selector:
+    app: business-layer
+  type: NodePort
+
+----
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: takeon-ui
+  namespace: ${namespace}
+  labels:
+    app: takeon-ui
+spec:
+  ports:
+  - port: 5000
+    name: flask
+    nodePort: 31000
+    targetPort: 5000
+    protocol: TCP
+  selector:
+    app: takeon-ui
+  type: NodePort

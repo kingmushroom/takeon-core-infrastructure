@@ -1,0 +1,23 @@
+aws_region: eu-west-2
+eks_git_repository: https://github.com/ONSdigital/takeon-eks
+branch: dev
+environment_name:
+#user running terraform
+user:
+my_computer_ip:
+gov_wifi_ip:
+accountID:
+cidr_public:
+cidr_public_two:
+cidr_private:
+cidr_private_two:
+cidr_node:
+#STAGE can be replaced with dev, test, prod
+#USER can be replaced with user running terraform
+state_file: eks/eks_cluster/{STAGE}/{USER}/terraform.tfstate
+ui_ecr_repository: {accountID}.dkr.ecr.eu-west-2.amazonaws.com/takeon-dev-sandbox-ui
+ui_git_repository: https://github.com/ONSdigital/takeon-ui
+namespace:
+cluster_name:
+bl_ecr_repository: ${var.accountID}.dkr.ecr.eu-west-2.amazonaws.com/takeon-dev-sandbox-bl
+bl_git_repository: https://github.com/ONSdigital/takeon-business-layer

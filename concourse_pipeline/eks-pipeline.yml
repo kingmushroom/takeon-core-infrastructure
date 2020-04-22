@@ -1,0 +1,317 @@
+resource_types:
+- name: terraform
+  type: docker-image
+  source:
+    repository: ljfranklin/terraform-resource
+    tag: latest
+- name: kubernetes
+  type: docker-image
+  source:
+    repository: zlabjp/kubernetes-resource
+    tag: "1.15"
+
+resources:
+  - name: eks-git-repo
+    type: git
+    source:
+      uri: {{eks_git_repository}}
+      branch: {{branch}}
+  - name: terraform-state
+    type: terraform
+    source:
+      backend_type: s3
+      backend_config:
+        bucket: takeon-terraform-state
+        key: {{state_file}}
+        region: {{aws_region}}
+        access_key: ((aws.aws_access_key))
+        secret_key: ((aws.aws_secret_access_key))
+        dynamodb_table: takeon-terraform-state
+      vars:
+        environment_name: {{environment_name}}
+        user: {{user}}
+        my_computer_ip: {{my_computer_ip}}
+        gov_wifi_ip: {{gov_wifi_ip}}
+        accountID: {{accountID}}
+        cidr_public: {{cidr_public}}
+        cidr_public_two: {{cidr_public_two}}
+        cidr_private: {{cidr_private}}
+        cidr_private_two: {{cidr_private_two}}
+        cidr_node: {{cidr_node}}
+      env:
+        AWS_ACCESS_KEY_ID: ((aws.aws_access_key))
+        AWS_SECRET_ACCESS_KEY: ((aws.aws_secret_access_key))
+
+  - name: ui-git-repo
+    type: git
+    source:
+      uri: {{ui_git_repository}}
+      branch: dev
+  - name: ui-docker-config
+    type: docker-image
+    source:
+      repository: {{ui_ecr_repository}}
+      tag: latest
+      aws_access_key_id: ((aws.aws_access_key))
+      aws_secret_access_key: ((aws.aws_secret_access_key))
+      aws_region: {{aws_region}}
+  - name: kubeconfig-file
+    type: s3
+    source:
+      bucket: cicd-kubeconfig-sandbox
+      versioned_file: kube_config.yaml
+      access_key_id: ((aws.aws_access_key))
+      secret_access_key: ((aws.aws_secret_access_key))
+      region_name: {{aws_region}}
+  - name: ui-deployment-file
+    type: s3
+    source:
+      bucket: cicd-kubeconfig-sandbox
+      versioned_file: takeon-ui-deployment.yaml
+      access_key_id: ((aws.aws_access_key))
+      secret_access_key: ((aws.aws_secret_access_key))
+      region_name: {{aws_region}}
+  - name: k8s
+    type: kubernetes
+    source:
+      use_aws_iam_authenticator: true
+      aws_eks_cluster_name: {{cluster_name}}
+      aws_access_key_id: ((aws.aws_access_key))
+      aws_secret_access_key: ((aws.aws_secret_access_key))
+      namespace: {{namespace}}
+
+  - name: bl-git-repo
+    type: git
+    source:
+      uri: {{bl_git_repository}}
+      branch: dev
+  - name: bl-docker-config
+    type: docker-image
+    source:
+      repository: {{bl_ecr_repository}}
+      aws_access_key_id: ((aws.aws_access_key))
+      aws_secret_access_key: ((aws.aws_secret_access_key))
+  - name: bl-deployment-file
+    type: s3
+    source:
+      bucket: cicd-kubeconfig-sandbox
+      versioned_file: takeon-business-layer-deployment.yaml
+      access_key_id: ((aws.aws_access_key))
+      secret_access_key: ((aws.aws_secret_access_key))
+      region_name: {{aws_region}}
+
+  - name: gql-deployment-file
+    type: s3
+    source:
+      bucket: cicd-kubeconfig-sandbox
+      versioned_file: takeon-graphql-deployment.yaml
+      access_key_id: ((aws.aws_access_key))
+      secret_access_key: ((aws.aws_secret_access_key))
+      region_name: {{aws_region}}
+
+
+
+jobs:
+  - name: terraform-apply
+    plan:
+     - get: eks-git-repo
+       trigger: true
+     - put: terraform-state
+       params:
+        terraform_source: git-repo/aws_infrastructure/eks_cluster/
+        action: apply
+        env_name: {{environment_name}}
+        vars:
+          environment_name: {{environment_name}}
+          user: {{user}}
+          my_computer_ip: {{my_computer_ip}}
+          gov_wifi_ip: {{gov_wifi_ip}}
+          accountID: {{accountID}}
+          cidr_public: {{cidr_public}}
+          cidr_public_two: {{cidr_public_two}}
+          cidr_private: {{cidr_private}}
+          cidr_private_two: {{cidr_private_two}}
+          cidr_node: {{cidr_node}}
+  - name: terraform-destroy
+    plan:
+     - get: eks-git-repo
+     - put: terraform-state
+       params:
+         action: destroy
+         terraform_source: git-repo/aws_infrastructure/eks_cluster/
+         env_name: {{environment_name}}
+       get_params:
+         action: destroy
+  - name: "ui-Docker-Build"
+    public: false
+    plan:
+      - get: ui-git-repo
+        trigger: true
+      - put: ui-docker-config
+        params:
+          # The path of a directory containing a Dockerfile to build
+          build: ui-git-repo
+          tag_as_latest: true
+
+  - name: "ui-Running-Unit-Tests"
+    public: false
+    plan:
+      - get: ui-git-repo
+        trigger: true
+        passed:
+          - "ui-Docker-Build"
+      - task: aws-tests
+        config:
+            platform: linux
+            image_resource:
+              type: docker-image
+              source:
+                repository: {{ui_ecr_repository}}
+                aws_access_key_id: ((aws.aws_access_key))
+                aws_secret_access_key: ((aws.aws_secret_access_key))
+            inputs:
+              - name: ui-git-repo
+            run:
+              path: sh
+              args:
+                - -exc
+                - |
+                  cd ui-git-repo
+                  export MOCKING=True
+                  PYTHONPATH=$(pwd)/ui-git-repo pytest
+  - name: "ui-Deploy-Application"
+    public: false
+    plan:
+      - aggregate:
+        - get: ui-docker-config
+          trigger: true
+          # When specified, only the versions of the resource
+          # that made it through the given list of jobs will be considered when
+          # triggering and fetching.
+          passed:
+            - "ui-Docker-Build"
+        - get: kubeconfig-file
+        - get: ui-deployment-file
+      - put: k8s
+        params:
+            kubectl: apply -f ui-deployment-file/takeon-ui-deployment.yaml
+            wait_until_ready_selector: app=takeon-ui
+            kubeconfig_file: kubeconfig-file/kube_config.yaml
+      - put: k8s
+        params:
+            kubectl: delete pods -l app=takeon-ui -n {{namespace}}
+            wait_until_ready_selector: app=takeon-ui
+            kubeconfig_file: kubeconfig-file/kube_config.yaml
+
+  - name: "bl-Docker-Build"
+    public: false
+    plan:
+      - get: bl-git-repo
+        trigger: true
+      - put: bl-docker-config
+        params:
+          # The path of a directory containing a Dockerfile to build
+          build: bl-git-repo
+          tag_as_latest: true
+  - name: "bl-Running-Unit-Tests"
+    public: false
+    plan:
+      - get: bl-git-repo
+        trigger: true
+        passed:
+          - "bl-Docker-Build"
+      - task: aws-tests
+        config:
+            platform: linux
+            image_resource:
+              type: docker-image
+              source:
+                repository: maven
+            inputs:
+              - name: bl-git-repo
+            run:
+              path: bash
+              args:
+                - -c
+                - |
+                  set -e
+                  cd bl-git-repo
+                  mvn clean test jacoco:report
+                  awk -F"," '{ instructions += $4 + $5; covered += $5 } END { print covered, "/", instructions, " instructions covered"; print 100*covered/instructions, "% covered" }' target/site/jacoco/jacoco.csv
+  - name: "bl-Deploy-Application"
+    public: false
+    plan:
+      - aggregate:
+        - get: bl-docker-config
+          trigger: true
+          # When specified, only the versions of the resource
+          # that made it through the given list of jobs will be considered when
+          # triggering and fetching.
+          passed:
+            - "bl-Docker-Build"
+        - get: kubeconfig-file
+        - get: bl-deployment-file
+      - put: k8s
+        params:
+          kubectl: apply -f bl-deployment-file/takeon-business-layer-deployment.yaml
+          wait_until_ready_selector: app=business-layer
+          kubeconfig_file: kubeconfig-file/kube_config.yaml
+      - put: k8s
+        params:
+          kubectl: delete pods -l app=business-layer -n {{namespace}}
+          wait_until_ready_selector: app=business-layer
+          kubeconfig_file: kubeconfig-file/kube_config.yaml
+     
+  - name: "gql-Deploy-Application"
+    public: false
+    plan:
+      - aggregate:
+        - get: kubeconfig-file
+        - get: gql-deployment-file
+      - put: k8s
+        params:
+            kubectl: apply -f gql-deployment-file/takeon-graphql-deployment.yaml
+            wait_until_ready_selector: app=graphql
+            kubeconfig_file: kubeconfig-file/kube_config.yaml
+      - put: k8s
+        params:
+            kubectl: delete pods -l app=graphql -n {{namespace}}
+            wait_until_ready_selector: app=graphql
+            kubeconfig_file: kubeconfig-file/kube_config.yaml
+
+groups:
+- name: All
+  jobs:
+  - bl-Docker-Build
+  - ui-Docker-Build
+  - bl-Running-Unit-Tests
+  - ui-Running-Unit-Tests
+  - bl-Deploy-Application
+  - ui-Deploy-Application
+  - terraform-apply
+  - terraform-destroy
+  - gql-Deploy-Application
+- name: Docker-Build
+  jobs:
+  - bl-Docker-Build
+  - ui-Docker-Build
+- name: Running-Unit-Tests
+  jobs:
+  - bl-Running-Unit-Tests
+  - ui-Running-Unit-Tests
+- name: Deploy-Application
+  jobs:
+  - bl-Deploy-Application
+  - ui-Deploy-Application
+  - gql-Deploy-Application
+- name: terraform-all
+  jobs:
+  - terraform-apply
+  - terraform-destroy
+- name: terraform-apply
+  jobs:
+  - terraform-apply
+- name: terraform-destroy
+  jobs:
+  - terraform-destroy
+
