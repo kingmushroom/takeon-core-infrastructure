@@ -6,6 +6,9 @@ __pycache__/
 # C extensions
 *.so
 
+concourse_pipeline/eks-params.yml
+concourse_pipeline/secrets.aws.tmpl
+
 # Distribution / packaging
 .Python
 build/

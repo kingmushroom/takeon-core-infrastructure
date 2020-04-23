@@ -5,7 +5,7 @@ resource "aws_vpc" "vpc" {
     enable_dns_support = true
 
     tags = {
-        Name = "${var.environment_name}-vpc"
+        Name = "${var.environment_name}-${var.user}-vpc"
         App = "takeon"
         "kubernetes.io/cluster/eks-cluster" = "shared"
     }
@@ -16,7 +16,7 @@ resource "aws_eip" "eip" {
     vpc = true
 
     tags = {
-        Name = "${var.environment_name}-eip"
+        Name = "${var.environment_name}-${var.user}-eip"
         App = "takeon"
     }
 }
@@ -27,7 +27,7 @@ resource "aws_nat_gateway" "nat" {
     subnet_id = aws_subnet.public-subnet.id
 
     tags = {
-        Name = "${var.environment_name}-nat"
+        Name = "${var.environment_name}-${var.user}-nat"
         App = "takeon"
     }
 }
@@ -37,7 +37,7 @@ resource "aws_internet_gateway" "ig" {
     vpc_id = aws_vpc.vpc.id
 
     tags = {
-        Name = "${var.environment_name}-ig"
+        Name = "${var.environment_name}-${var.user}-ig"
         App = "takeon"
     }
 }
@@ -52,7 +52,7 @@ resource "aws_route_table" "main-routetable" {
     }
 
     tags = {
-        Name = "${var.environment_name}-main-routetable"
+        Name = "${var.environment_name}-${var.user}-main-routetable"
         App = "takeon"
     }
 }
@@ -75,7 +75,7 @@ resource "aws_route_table" "secondary-routetable" {
     }
 
     tags = {
-        Name = "${var.environment_name}-secondary-routetable"
+        Name = "${var.environment_name}-${var.user}-secondary-routetable"
         App = "takeon"
     }
 }
@@ -92,7 +92,7 @@ resource "aws_vpc_endpoint" "takeon-s3-endpoint" {
   service_name = "com.amazonaws.eu-west-2.s3"
 
   tags = {
-        Name = "${var.environment_name}-s3-endpoint"
+        Name = "${var.environment_name}-${var.user}-s3-endpoint"
         App = "takeon"
     }
 }
@@ -111,7 +111,7 @@ resource "aws_vpc_endpoint" "takeon-sqs-endpoint" {
   
   subnet_ids = [aws_subnet.public-subnet.id, aws_subnet.private-subnet2.id]
     tags = {
-        Name = "${var.environment_name}-sqs-endpoint"
+        Name = "${var.environment_name}-${var.user}-sqs-endpoint"
         App = "takeon"
     }
 }
@@ -124,7 +124,7 @@ resource "aws_subnet" "public-subnet" {
 
     tags = {
         App = "takeon"
-        Name = "${var.environment_name}-public-subnet"
+        Name = "${var.environment_name}-${var.user}-public-subnet"
         "kubernetes.io/role/elb" = "1"
         "kubernetes.io/cluster/eks-cluster" = "shared"
     }
@@ -132,11 +132,11 @@ resource "aws_subnet" "public-subnet" {
 
 resource "aws_subnet" "public-subnet2" {
     vpc_id = aws_vpc.vpc.id
-    cidr_block = var.cidr_public2
+    cidr_block = var.cidr_public_two
     availability_zone = ""
 
     tags = {
-        Name = "${var.environment_name}-public-subnet2"
+        Name = "${var.environment_name}-${var.user}-public-subnet2"
         App = "takeon"
         "kubernetes.io/role/elb" = "1"
         "kubernetes.io/cluster/eks-cluster" = "shared"
@@ -151,7 +151,7 @@ resource "aws_subnet" "private-subnet" {
         delete = "40m"
     }
     tags = {
-        Name = "${var.environment_name}-private-subnet"
+        Name = "${var.environment_name}-${var.user}-private-subnet"
         App = "takeon"
         "kubernetes.io/cluster/eks-cluster" = "shared"
         "kubernetes.io/role/internal-elb" = "1"
@@ -160,13 +160,13 @@ resource "aws_subnet" "private-subnet" {
 
 resource "aws_subnet" "private-subnet2" {
     vpc_id = aws_vpc.vpc.id
-    cidr_block = var.cidr_private2
+    cidr_block = var.cidr_private_two
     availability_zone = "eu-west-2b"
     timeouts {
         delete = "40m"
     }
     tags = {
-        Name = "${var.environment_name}-private-subnet2"
+        Name = "${var.environment_name}-${var.user}-private-subnet2"
         App = "takeon"
         "kubernetes.io/cluster/eks-cluster" = "shared"
         "kubernetes.io/role/internal-elb" = "1"

@@ -1,27 +1,27 @@
 # Security group for the bastion instance to allow local update
 resource "aws_security_group" "bastion-securitygroup" {
-    name = "${var.environment_name}-bastion-securitygroup"
+    name = "${var.environment_name}-${var.user}-bastion-securitygroup"
     vpc_id = aws_vpc.vpc.id
   
     ingress {
         from_port = 5432
         to_port = 5432
         protocol = "TCP"
-        cidr_blocks =[var.my_ip]
+        cidr_blocks =[var.my_computer_ip]
     }
 
     ingress {
         from_port = 22
         to_port = 22
         protocol = "TCP"
-        cidr_blocks = [var.my_ip]
+        cidr_blocks = [var.my_computer_ip]
     }
 
     ingress {
         from_port = 443
         to_port = 443
         protocol = "TCP"
-        cidr_blocks = [var.my_ip]
+        cidr_blocks = [var.my_computer_ip]
     }
 
     egress {
@@ -35,7 +35,7 @@ resource "aws_security_group" "bastion-securitygroup" {
         from_port = 5432
         to_port = 5432
         protocol = "TCP"
-        cidr_blocks = [var.cidr_private2]
+        cidr_blocks = [var.cidr_private_two]
     }
 
     egress {
@@ -49,32 +49,32 @@ resource "aws_security_group" "bastion-securitygroup" {
         from_port = 22
         to_port = 22
         protocol = "TCP"
-        cidr_blocks = [var.cidr_private2]
+        cidr_blocks = [var.cidr_private_two]
     }
 
     egress {
         from_port = 80
         to_port = 80
         protocol = "TCP"
-        cidr_blocks = [var.my_ip]
+        cidr_blocks = [var.my_computer_ip]
     }
 
     egress {
         from_port = 443
         to_port = 443
         protocol = "TCP"
-        cidr_blocks = [var.my_ip]
+        cidr_blocks = [var.my_computer_ip]
     }
 
     tags = {
-        Name = "${var.environment_name}-bastion-securitygroup"
+        Name = "${var.environment_name}-${var.user}-bastion-securitygroup"
         App = "takeon"
     }
 }
 
 # private security group
 resource "aws_security_group" "private-securitygroup" {
-    name = "${var.environment_name}-private-securitygroup"
+    name = "${var.environment_name}-${var.user}-private-securitygroup"
     vpc_id = aws_vpc.vpc.id
     timeouts {
         delete = "40m"
@@ -100,7 +100,7 @@ resource "aws_security_group" "private-securitygroup" {
         from_port = 80
         to_port = 80
         protocol = "TCP"
-        cidr_blocks = [var.my_ip]
+        cidr_blocks = [var.my_computer_ip]
     }
 
 
@@ -115,7 +115,7 @@ resource "aws_security_group" "private-securitygroup" {
         to_port = 443
         from_port = 443
         protocol = "TCP"
-        cidr_blocks = [var.my_ip]
+        cidr_blocks = [var.my_computer_ip]
     }
 
 
@@ -130,7 +130,7 @@ resource "aws_security_group" "private-securitygroup" {
 
 
     tags = {
-        Name = "${var.environment_name}-private-securitygroup"
+        Name = "${var.environment_name}-${var.user}-private-securitygroup"
         App = "takeon"
     }
 }
@@ -183,7 +183,7 @@ resource "aws_security_group_rule" "private-securitygroup-bastion" {
 
 # public Security Group
 resource "aws_security_group" "public-securitygroup" {
-  name = "${var.environment_name}-public-securitygroup"
+  name = "${var.environment_name}-${var.user}-public-securitygroup"
   vpc_id = aws_vpc.vpc.id
 
   # Ingress rules
@@ -191,7 +191,7 @@ resource "aws_security_group" "public-securitygroup" {
       from_port = 80
       to_port = 80
       protocol = "TCP"
-      cidr_blocks = [var.my_ip]
+      cidr_blocks = [var.my_computer_ip]
     }
 
 
@@ -206,14 +206,14 @@ resource "aws_security_group" "public-securitygroup" {
       from_port = 3389
       to_port = 3389
       protocol = "TCP"
-      cidr_blocks = [var.my_ip]
+      cidr_blocks = [var.my_computer_ip]
     }
 
     ingress {
       from_port = 443
       to_port = 443
       protocol = "TCP"
-      cidr_blocks = [var.my_ip]
+      cidr_blocks = [var.my_computer_ip]
     }
 
 
@@ -223,19 +223,19 @@ resource "aws_security_group" "public-securitygroup" {
       from_port = 80
       to_port = 80
       protocol = "TCP"
-      cidr_blocks = [var.my_ip]
+      cidr_blocks = [var.my_computer_ip]
     }
 
     egress {
       from_port = 443
       to_port = 443
       protocol = "TCP"
-      cidr_blocks = [var.my_ip]
+      cidr_blocks = [var.my_computer_ip]
     }
 
 
     tags ={
-        Name = "${var.environment_name}-public-securitygroup"
+        Name = "${var.environment_name}-${var.user}-public-securitygroup"
         App = "takeon"
     }
 }
@@ -279,7 +279,7 @@ resource "aws_security_group_rule" "public-securitygroup-Egress-Self" {
 # Endpoint security group to allow lambdas and api to interact with sqs
 
 resource "aws_security_group" "sqs-endpoint" {
-    name = "${var.environment_name}-endpoint-securitygroup"
+    name = "${var.environment_name}-${var.user}-endpoint-securitygroup"
     vpc_id = aws_vpc.vpc.id
   
     egress {
