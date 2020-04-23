@@ -11,7 +11,7 @@ resource_types:
     tag: "1.15"
 
 resources:
-  - name: eks-git-repo
+  - name: takeon-core-infra-git-repo
     type: git
     source:
       uri: {{eks_git_repository}}
@@ -155,11 +155,11 @@ resources:
 jobs:
   - name: terraform-eks-apply
     plan:
-     - get: eks-git-repo
+     - get: takeon-core-infra-git-repo
        trigger: true
      - put: eks-terraform-state
        params:
-        terraform_source: git-repo/aws_infrastructure/eks_cluster/
+        terraform_source: takeon-core-infra-git-repo/aws_infrastructure/eks_cluster/
         action: apply
         env_name: {{environment_name}}
         vars:
@@ -175,22 +175,22 @@ jobs:
           cidr_node: {{cidr_node}}
   - name: terraform-eks-destroy
     plan:
-     - get: eks-git-repo
+     - get: takeon-core-infra-git-repo
      - put: eks-terraform-state
        params:
          action: destroy
-         terraform_source: git-repo/aws_infrastructure/eks_cluster/
+         terraform_source: takeon-core-infra-git-repo/aws_infrastructure/eks_cluster/
          env_name: {{environment_name}}
        get_params:
          action: destroy
 
   - name: terraform-rds-apply
     plan:
-     - get: eks-git-repo
+     - get: takeon-core-infra-git-repo
        trigger: true
      - put: rds-terraform-state
        params:
-        terraform_source: git-repo/aws_infrastructure/rds/
+        terraform_source: takeon-core-infra-git-repo/aws_infrastructure/rds/
         action: apply
         env_name: {{environment_name}}
         vars:
@@ -199,22 +199,22 @@ jobs:
 
   - name: terraform-rds-destroy
     plan:
-     - get: eks-git-repo
+     - get: takeon-core-infra-git-repo
      - put: rds-terraform-state
        params:
          action: destroy
-         terraform_source: git-repo/aws_infrastructure/rds/
+         terraform_source: takeon-core-infra-git-repo/aws_infrastructure/rds/
          env_name: {{environment_name}}
        get_params:
          action: destroy
 
   - name: terraform-vpc-apply
     plan:
-     - get: eks-git-repo
+     - get: takeon-core-infra-git-repo
        trigger: true
      - put: vpc-terraform-state
        params:
-        terraform_source: git-repo/aws_infrastructure/vpc/
+        terraform_source: takeon-core-infra-git-repo/aws_infrastructure/vpc/
         action: apply
         env_name: {{environment_name}}
         vars:
@@ -228,11 +228,11 @@ jobs:
 
   - name: terraform-vpc-destroy
     plan:
-     - get: eks-git-repo
+     - get: takeon-core-infra-git-repo
      - put: vpc-terraform-state
        params:
          action: destroy
-         terraform_source: git-repo/aws_infrastructure/vpc/
+         terraform_source: takeon-core-infra-git-repo/aws_infrastructure/vpc/
          env_name: {{environment_name}}
        get_params:
          action: destroy
