@@ -383,9 +383,13 @@ groups:
   - ui-Running-Unit-Tests
   - bl-Deploy-Application
   - ui-Deploy-Application
-  - terraform-apply
-  - terraform-destroy
   - gql-Deploy-Application
+  - terraform-eks-apply
+  - terraform-eks-destroy
+  - terraform-rds-apply
+  - terraform-rds-destroy
+  - terraform-vpc-apply
+  - terraform-vpc-destroy
 - name: Docker-Build
   jobs:
   - bl-Docker-Build
@@ -401,12 +405,20 @@ groups:
   - gql-Deploy-Application
 - name: terraform-all
   jobs:
-  - terraform-apply
-  - terraform-destroy
+  - terraform-eks-apply
+  - terraform-eks-destroy
+  - terraform-rds-apply
+  - terraform-rds-destroy
+  - terraform-vpc-apply
+  - terraform-vpc-destroy
 - name: terraform-apply
   jobs:
-  - terraform-apply
+  - terraform-eks-apply
+  - terraform-rds-apply
+  - terraform-vpc-apply
 - name: terraform-destroy
   jobs:
-  - terraform-destroy
+  - terraform-eks-destroy
+  - terraform-rds-destroy
+  - terraform-vpc-destroy
 
