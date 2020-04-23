@@ -1,3 +1,6 @@
+variable "aws_region" {
+}
+
 variable "user" {
 }
 variable "environment_name" {

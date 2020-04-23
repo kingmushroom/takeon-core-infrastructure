@@ -2,49 +2,49 @@
 data "aws_vpc" "vpc" {
   filter {
     name = "tag:Name"
-    values = ["${var.environment_name}-vpc"]
+    values = ["${var.environment_name}-${var.user}-vpc"]
   }
 }
 
 data "aws_security_group" "private-securitygroup" {
   filter {
     name = "tag:Name"
-    values = ["${var.environment_name}-private-securitygroup"]
+    values = ["${var.environment_name}-${var.user}-private-securitygroup"]
   }
 }
 
 data "aws_security_group" "public-securitygroup" {
   filter {
     name = "tag:Name"
-    values = ["${var.environment_name}-public-securitygroup"]
+    values = ["${var.environment_name}-${var.user}-public-securitygroup"]
   }
 }
 
 data "aws_subnet" "public-subnet" {
   filter {
     name = "tag:Name"
-    values = ["${var.environment_name}-public-subnet"]
+    values = ["${var.environment_name}-${var.user}-public-subnet"]
   }
 }
 
 data "aws_subnet" "public-subnet2" {
   filter {
     name = "tag:Name"
-    values = ["${var.environment_name}-public-subnet2"]
+    values = ["${var.environment_name}-${var.user}-public-subnet2"]
   }
 }
 
 data "aws_subnet" "private-subnet" {
   filter {
     name = "tag:Name"
-    values = ["${var.environment_name}-private-subnet"]
+    values = ["${var.environment_name}-${var.user}-private-subnet"]
   }
 }
 
 data "aws_subnet" "private-subnet2" {
   filter {
     name = "tag:Name"
-    values = ["${var.environment_name}-private-subnet2"]
+    values = ["${var.environment_name}-${var.user}-private-subnet2"]
   }
 }
 
