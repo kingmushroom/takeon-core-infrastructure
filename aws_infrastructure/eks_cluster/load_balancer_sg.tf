@@ -20,7 +20,7 @@ resource "aws_security_group" "eks-alb-sg" {
 }
 
 resource "aws_security_group_rule" "eks-nlb-sg--ingress-workstation-https" {
-  cidr_blocks       = ["${var.my_computer_ip}/32"]
+  cidr_blocks       = ["${var.my_computer_ip}"]
   description       = "Allow workstation to communicate with the cluster API Server."
   from_port         = 80
   protocol          = "tcp"
